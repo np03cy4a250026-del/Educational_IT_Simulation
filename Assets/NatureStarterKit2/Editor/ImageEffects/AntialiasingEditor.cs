@@ -10,6 +10,7 @@ namespace UnityStandardAssets.ImageEffects
         private SerializedObject serObj;
 
         private SerializedProperty mode;
+ git config --global http.postBuffer 524288000
 
         private SerializedProperty showGeneratedNormals;
         private SerializedProperty offsetScale;
