@@ -1,10 +1,16 @@
 using UnityEngine;
+using UnityEngine.UI;
+using TMPro;
 
 public class LaptopData : MonoBehaviour
 {
-    [Header("Device Info")]
-    public string deviceTitle = "Laptop — Phishing & Malware";
-
-    [Header("Drag your PNG images here")]
+    [Header("Images")]
     public Texture2D[] deviceImages;
+
+    [Header("This Device's Wall Panel")]
+    public GameObject wallInfoPanel;
+    public Image deviceImage;
+    public TextMeshProUGUI counterText;
+    public Button prevButton;
+    public Button nextButton;
 }

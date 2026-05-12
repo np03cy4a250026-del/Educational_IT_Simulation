@@ -11,34 +11,29 @@ public class MouseRaycast : MonoBehaviour
     [Header("Cursor")]
     public Texture2D handCursorTexture;
 
-    [Header("Wall Panel")]
-    public GameObject wallInfoPanel;
-
-    [Header("Panel UI Elements")]
-    public Image deviceImage;
-    public TextMeshProUGUI titleText;
-    public TextMeshProUGUI counterText;
-    public Button prevButton;
-    public Button nextButton;
-
     private Camera cam;
     private GameObject lastHovered;
     private Texture2D[] currentImages;
     private int currentIndex = 0;
+    private GameObject currentPanel;
+    private Image currentDeviceImage;
+    private TextMeshProUGUI currentCounterText;
+    private Button currentPrevButton;
+    private Button currentNextButton;
 
     void Start()
     {
         cam = Camera.main;
-
         Cursor.visible = true;
         Cursor.lockState = CursorLockMode.None;
 
-        wallInfoPanel.SetActive(false);
-
-        prevButton.onClick.RemoveAllListeners();
-        nextButton.onClick.RemoveAllListeners();
-        prevButton.onClick.AddListener(ShowPrevImage);
-        nextButton.onClick.AddListener(ShowNextImage);
+        // Hide ALL panels at start
+        foreach (LaptopData device in 
+            FindObjectsOfType<LaptopData>())
+        {
+            if (device.wallInfoPanel != null)
+                device.wallInfoPanel.SetActive(false);
+        }
     }
 
     void Update()
@@ -52,7 +47,7 @@ public class MouseRaycast : MonoBehaviour
             return;
         }
 
-        if (wallInfoPanel.activeSelf)
+        if (currentPanel != null && currentPanel.activeSelf)
         {
             if (Input.GetMouseButtonDown(1) ||
                 Input.GetKeyDown(KeyCode.E))
@@ -68,7 +63,6 @@ public class MouseRaycast : MonoBehaviour
             if (hit.collider.CompareTag("CyberDevice"))
             {
                 HandleHover(hit.collider.gameObject);
-
                 if (Input.GetMouseButtonDown(0))
                     HandleClick(hit.collider.gameObject);
             }
@@ -119,18 +113,28 @@ public class MouseRaycast : MonoBehaviour
             return;
         }
 
+        // Close previous panel if open
+        ClosePanel();
+
+        // Get THIS device's own panel
+        currentPanel          = data.wallInfoPanel;
+        currentDeviceImage    = data.deviceImage;
+        currentCounterText    = data.counterText;
+        currentPrevButton     = data.prevButton;
+        currentNextButton     = data.nextButton;
+
         currentImages = data.deviceImages;
-        currentIndex = 0;
+        currentIndex  = 0;
 
-        // Only activate — never touch position or rotation
-        wallInfoPanel.SetActive(true);
+        currentPanel.SetActive(true);
 
-        titleText.text = data.deviceTitle;
+        // Hook buttons
+        currentPrevButton.onClick.RemoveAllListeners();
+        currentNextButton.onClick.RemoveAllListeners();
+        currentPrevButton.onClick.AddListener(ShowPrevImage);
+        currentNextButton.onClick.AddListener(ShowNextImage);
+
         DisplayCurrentImage();
-
-        Cursor.visible = true;
-        Cursor.lockState = CursorLockMode.None;
-
         StartCoroutine(AnimatePanel());
     }
 
@@ -140,25 +144,20 @@ public class MouseRaycast : MonoBehaviour
             currentImages.Length == 0) return;
 
         Texture2D tex = currentImages[currentIndex];
-
-        if (tex == null)
-        {
-            Debug.LogWarning("Image " + currentIndex + " is null!");
-            return;
-        }
+        if (tex == null) return;
 
         Sprite newSprite = Sprite.Create(
             tex,
             new Rect(0, 0, tex.width, tex.height),
             new Vector2(0.5f, 0.5f)
         );
-        deviceImage.sprite = newSprite;
+        currentDeviceImage.sprite = newSprite;
 
-        counterText.text =
+        currentCounterText.text =
             $"Image {currentIndex + 1} of {currentImages.Length}";
 
-        prevButton.gameObject.SetActive(currentIndex > 0);
-        nextButton.gameObject.SetActive(
+        currentPrevButton.gameObject.SetActive(currentIndex > 0);
+        currentNextButton.gameObject.SetActive(
             currentIndex < currentImages.Length - 1);
     }
 
@@ -184,9 +183,17 @@ public class MouseRaycast : MonoBehaviour
 
     void ClosePanel()
     {
-        wallInfoPanel.SetActive(false);
-        currentImages = null;
-        currentIndex = 0;
+        if (currentPanel != null)
+            currentPanel.SetActive(false);
+
+        currentPanel       = null;
+        currentImages      = null;
+        currentIndex       = 0;
+        currentDeviceImage = null;
+        currentCounterText = null;
+        currentPrevButton  = null;
+        currentNextButton  = null;
+
         Cursor.visible = true;
         Cursor.lockState = CursorLockMode.None;
         ClearHover();
@@ -195,15 +202,15 @@ public class MouseRaycast : MonoBehaviour
     System.Collections.IEnumerator AnimatePanel()
     {
         Vector3 finalScale = new Vector3(0.01f, 0.01f, 0.01f);
-        wallInfoPanel.transform.localScale = Vector3.zero;
+        currentPanel.transform.localScale = Vector3.zero;
         float t = 0f;
         while (t < 1f)
         {
             t += Time.deltaTime * 8f;
-            wallInfoPanel.transform.localScale =
+            currentPanel.transform.localScale =
                 Vector3.Lerp(Vector3.zero, finalScale, t);
             yield return null;
         }
-        wallInfoPanel.transform.localScale = finalScale;
+        currentPanel.transform.localScale = finalScale;
     }
 }
